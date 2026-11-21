@@ -1,0 +1,173 @@
+
+<html>
+<head>
+    <title>Weather Information</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            margin: 0;
+            padding: 50px 20px;
+            text-align: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: white;
+            font-size: 35px;
+            margin-bottom: 20px;
+        }
+
+        hr {
+            width: 60%;
+            border: 1px solid white;
+            margin-bottom: 40px;
+        }
+
+        input {
+            width: 250px;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            margin-right: 8px;
+        }
+
+        button {
+            padding: 14px 22px;
+            background-color: #222;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #444;
+            transform: scale(1.05);
+        }
+
+        #result {
+            background-color: white;
+            width: 350px;
+            margin: 40px auto;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        #result h3 {
+            color: #764ba2;
+            font-size: 25px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 12px;
+        }
+
+        #result h4 {
+            color: #333;
+            background-color: #f3f0fa;
+            padding: 12px;
+            border-radius: 7px;
+            font-size: 16px;
+        }
+
+    </style>
+</head>
+
+<body>
+    <h1>Weather Information</h1>
+    <hr>
+
+    <input type="text" id="city" placeholder="Enter a city name">
+    <button onclick="getWeather()">Get Data</button>
+
+    <div id="result"></div>
+
+    <script>
+
+        function getWeather() {
+
+            let place = document.getElementById("city").value.trim();
+
+            if (place == "") {
+                alert("Enter a city name");
+                return;
+            }
+
+            document.getElementById("result").innerHTML = "Loading...";
+
+            fetch("https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(place) + "&count=5&language=en&format=json")
+
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("City search failed");
+                }
+                return response.json();
+            })
+
+            .then(data => {
+
+                if (!data.results || data.results.length == 0) {
+                    document.getElementById("result").innerHTML = "City not found";
+                    return;
+                }
+
+                let latitude = data.results[0].latitude;
+                let longitude = data.results[0].longitude;
+
+                weather_details(latitude, longitude);
+
+            })
+
+            .catch(error => {
+                document.getElementById("result").innerHTML = error.message;
+            });
+        }
+
+
+        function weather_details(la, lo) {
+
+            fetch("https://api.open-meteo.com/v1/forecast?latitude=" + la + "&longitude=" + lo + "&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code")
+
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Weather data not available");
+                }
+                return response.json();
+            })
+
+            .then(data => {
+
+                console.log(data);
+
+                document.getElementById("result").innerHTML = `
+
+                    <div>
+                        <h3>Current Weather</h3>
+
+                        <h4>Temperature: ${data.current.temperature_2m} °C</h4>
+
+                        <h4>Humidity: ${data.current.relative_humidity_2m} %</h4>
+
+                        <h4>Feels Like: ${data.current.apparent_temperature} °C</h4>
+
+
+                    </div>
+
+                `;
+
+            })
+
+            .catch(error => {
+                document.getElementById("result").innerHTML = error.message;
+            });
+
+        }
+
+    </script>
+
+</body>
+</html>
